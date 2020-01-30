@@ -1,9 +1,10 @@
 require_relative("../db/sql_runner")
 
+
 class Movie
 
-  attr_accessor :title, :genre
-  attr_reader :id, :budget
+  attr_accessor :title, :genre, :budget
+  attr_reader :id
 
   def initialize(options)
     @id = options['id'].to_i if options ['id']
@@ -36,6 +37,16 @@ class Movie
     values = [@id]
     stars = SqlRunner.run(sql, values)
     return stars.map{|star| Star.new(star)}
+  end
+
+  def remaining_budget()
+    sql = "SELECT castings.fee FROM castings INNER JOIN movies ON castings.movie_id = movies.id WHERE movie_id = $1"
+    values = [@id]
+    fees = SqlRunner.run(sql, values)
+    fees_map = fees.map{|fee_hash| fee_hash['fee'].to_i}
+    fees_total = fees_map.reduce(0){|total, fee| total + fee}
+    @budget -= fees_total
+    return @budget
   end
 
   def self.all()
